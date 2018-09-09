@@ -1,0 +1,85 @@
+var robot={
+  limitPencarian:3,
+  kumpulanIdGroups:[
+    "ID-GROUP",
+    "ID-GROUP",
+    "ID-GROUP",
+    "ID-GROUP",
+    "ID-GROUP"
+  ],
+  kumpulanTokens:[
+     
+        {nama:"ID-FACEBOOK",token:"ACCESS_TOKEN"}
+  ]
+};
+//Gunakan Trigger pada Function "nyalakan()" dengan Timer per-Menit//
+function tarikMang(almt,prop){
+  var a=UrlFetchApp.fetch(almt,{
+    muteHttpExceptions:true,
+    method:"post",
+    payload:prop
+  });
+  var b=Utilities.jsonParse(a.getContentText());
+  return b;
+}
+function aduk(naon){
+  var a=naon.sort(function(){return 0.5-Math.random()});
+  a.reverse();
+  a=a.sort(function(){return 0.5-Math.random()});
+  return a;
+}
+function nyalakan(){
+  var a=aduk(robot.kumpulanTokens);
+  if(a[0].token==""){
+    robot.tokenSekarang=a[0].apptkn;
+  }else{
+    robot.tokenSekarang=a[0].token;
+  }
+  var p=tarikMang("https://graph.beta.facebook.com/me",{
+    method:"get",
+    fields:"id",
+    access_token:robot.tokenSekarang
+  });
+  if(p&&p.id){
+    robot.uidSekarang=p.id;
+    var b=aduk(robot.kumpulanIdGroups);
+    robot.idGroupSekarang=b[0];
+    var q=tarikMang("https://graph.beta.facebook.com/me/home",{
+      method:"get",
+      fields:"id,likes,comments.fields(id,user_likes)",
+      limit:robot.limitPencarian,
+      access_token:robot.tokenSekarang
+    });
+    if(q&&q.data&&q.data.length!=0){
+      for(x in q.data){
+        var c="y";
+        var d=q.data[x];
+        if(d.likes&&d.likes.data&&d.likes.data.length!=0){
+          for(y in d.likes.data){
+            if(d.likes.data[y].id&&d.likes.data[y].id==robot.uidSekarang){
+              c="n";
+              break;
+            }
+          }
+        }
+        if(c=="n"&&d.comments&&d.comments.data&&d.comments.data.length!=0){
+          for(z in d.comments.data){
+            if(!d.comments.data[z].user_likes){
+              var r=tarikMang("https://graph.beta.facebook.com/"+d.comments.data[z].id+"/likes",{
+                method:"post",
+                access_token:robot.tokenSekarang
+              });
+              break;
+            }
+          }
+        }
+        if(c=="y"){
+          var r=tarikMang("https://graph.beta.facebook.com/"+d.id+"/likes",{
+            method:"post",
+            access_token:robot.tokenSekarang
+          });
+        }
+      }
+    }
+  }
+}
