@@ -1,0 +1,36 @@
+var myToken = "ACCESS_TOKEN",
+    myID = "ID-FACEBOOK",
+    reactions = "HAHA",
+
+   pbm = {
+      getUrl: function(e) {
+        var A, R, I, S = "https://graph2.beta.facebook.com", s = {
+            "muteHttpExceptions": true,
+            "followRedirects": false,
+            "headers": {
+                "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:40.0) Gecko/20100101 Firefox/40.1",
+                "Referer": S + "/"
+            }
+        };
+        try {
+            if (A = UrlFetchApp.fetch(S + "" + e, s), R = A.getResponseCode(), 200 === R) return I = JSON.parse(A.getContentText());
+        } catch (n) {
+            Logger.log("Error: " + n);
+        }
+        return null;
+    }
+};
+
+function reAct() {
+    var W, I, B, OE, WO, E = pbm.getUrl("/v2.9/me/home?fields=id,likes,comments.fields(id,user_likes)&limit=75&access_token=" + myToken);
+    if (E && E.data && E.data.length !=0) for (x in E.data) {
+        if (W = E.data[x], W.likes && W.likes.data && W.likes.data.length !=0) for (y in W.likes.data) I = W.likes.data[y].id == myID ? true : false;
+        if (I || (B = [ "LOVE", "WOW", "HAHA", "SAD" ], reactions = "RANDOM" == reactions ? B[Math.round(Math.random() * (B.length - 1))] : reactions, 
+        OE = "/v2.9/" + W.id + "/reactions?method=POST&type=" + reactions + "&access_token=" + myToken, 
+        pbm.getUrl(OE)), I && W.comments && W.comments.data && W.comments.data.length <= 20) for (z in W.comments.data) if (!W.comments.data[z].user_likes) {
+            WO = "/v2.9/" + W.comments.data[z].id + "/likes?method=POST&access_token=" + myToken, 
+            pbm.getUrl(WO);
+            break;
+        }
+    }
+}
